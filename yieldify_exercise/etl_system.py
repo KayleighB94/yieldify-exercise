@@ -1,5 +1,3 @@
-import pandas
-
 
 class etl_metrics:
     """This class Runs a ETL service, which takes in the data and produces top 5 metrics """
@@ -13,4 +11,21 @@ class etl_metrics:
         """
 
         :return: Pandas dataframe
+        """
+
+    def setup_data(self):
+        """
+
+        :return:
+        """
+
+    def compute_top_5(self):
+        """"
+        """
+
+
+    def run(self):
+        """
+
+        :return:
         """
