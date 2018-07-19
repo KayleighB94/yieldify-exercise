@@ -1,5 +1,6 @@
 import unittest
-from yieldify_exercise.etl_system import etl_metrics
+from yieldify_exercise.etl_system import ETL_Metrics
+
 class TestEtlSystem(unittest.TestCase):
     """
     This class holds all the tests for each method within the elt_system class
@@ -10,7 +11,7 @@ class TestEtlSystem(unittest.TestCase):
         This setup method allows us to setup an instance of our etl_metrics class and then call the individual methods
         within it for our tests below.
         """
-        self.etl = etl_metrics()
+        self.etl = ETL_Metrics()
 
     def test_read_file(self):
         """
