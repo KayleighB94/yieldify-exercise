@@ -14,16 +14,24 @@ class TestEtlSystem(unittest.TestCase):
         within it for our tests below.
         """
         self.etl = ETL_Metrics()
-        self.etl.path = r"C:\Users\Kayleigh Bellis\Desktop\yieldify-exercise\test\resources\input_data.gz"
+        self.etl.path = r"C:\Users\Kayleigh Bellis\Desktop\yieldify-exercise\test\resources\test_input_data.gz"
 
     def test_read_file(self):
         """
 
         :return:
         """
+        expected_data = [
+            {"date":"2014-10-12", "time":"17:01:01", "user":"f4fdd9e55192e94758eb079ec6e24b219fe7d71e"},
+            {"date":"2014-10-12", "time":"17:01:01", "user":"0ae531264993367571e487fb486b13ea412aae3d"},
+            {"date":"2014-10-12", "time":"17:01:01", "user":"c5ac174ee153f7e570b179071f702bacfa347acf"},
+            {"date":"2014-10-12", "time":"17:01:01", "user":"2d86766f9908fde4153a1f0998777d3aa78c3ad5"},
+            {"date":"2014-10-12", "time":"17:01:01", "user":"3938fffe5c0a131f51df5c4ce3128c5edaf572c8"}
+        ]
+        expected_df = pandas.DataFrame(expected_data)
         self.etl.read_file()
 
-        #assert(expected.equals(self.etl.df)
+        assert(expected_df.equals(self.etl.df))
 
     def test_setup_data(self):
         """
@@ -53,17 +61,31 @@ class TestEtlSystem(unittest.TestCase):
         expected_df = pandas.DataFrame(expected_data)[["IP", "user_agent_string", "country", "city", "browser_family", "os_family"]]
 
         ## Asserting that the two dataset are equal to each other
-        assert expected_df.equals(self.etl.df[["IP", "user_agent_string", "country", "city", "browser_family", "os_family"]])
+        assert expected_df.equals(self.etl)
 
-    # def test_compute_top_5(self):
-    #     """
-    #
-    #     :return:
-    #     """
-    #
-    #     self.etl.compute_top_5()
-    #
-    #
+    def test_compute_top_5(self):
+        """
+
+        :return:
+        """
+        input_data = [
+            {"user": "334343434", "event": "4444/343434", "country":"United Kingdom", "city":"Manchester", "browser_family": "Safari", "os_family":"iOS"},
+            {"user": "334343434", "event": "5555/353535", "country":"United Kingdom", "city":"Harlech", "browser_family": "Chrome", "os_family": "Linux"},
+            {"user": "334343434", "event": "6666/363636", "country":"United Kingdom", "city":"Liverpool", "browser_family": "Chrome", "os_family": "Linux"},
+            ]
+        self.etl.df = pandas.DataFrame(input_data)
+
+        ## Running the method
+        self.etl.setup_data()
+
+        ## Creating expected data
+        expected_data = [
+
+        ]
+        expected_df = pandas.DataFrame(expected_data)[
+            ["IP", "user_agent_string", "country", "city", "browser_family", "os_family"]]
+
+
     # def test_run(self):
     #     """
     #
