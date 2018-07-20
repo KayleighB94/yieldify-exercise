@@ -1,6 +1,8 @@
 import gzip
 import pandas
 import httpagentparser
+from geoip import geolite2
+
 
 class ETL_Metrics:
     """This class Runs a ETL service, which takes in the data and produces top 5 metrics """
@@ -19,9 +21,8 @@ class ETL_Metrics:
 
         :return: Pandas dataframe
         """
-        with gzip.open(self.path, "r") as file:
-            file_content = file.read()
-        print(file_content)
+        columns = ["date", "time", "user_id", "url", "IP", "user_agent_string"]
+        self.df = pandas.read_table(self.path, compression= "gzip",names=columns)
 
 
     def setup_data(self):
@@ -29,10 +30,9 @@ class ETL_Metrics:
 
         :return:
         """
-        df = pandas.read_csv(self.file_content, sep="\t")
-        df = df.assign(browser= httpagentparser.simple_detect(df.user_agent_string)[0], os= httpagentparser.simple_detect(df.user_agent_string)[1])
-
-
+        #self.df["country"] = self.df.apply(lambda k: geolite2.lookup(k["IP"]).get("country").get("name"))
+        self.df["browser_family"] = self.df.apply(lambda k:httpagentparser.detect(k["user_agent_string"], {}).get("browser").get("name"), axis=1)
+        self.df["os_family"] = self.df.apply(lambda k:httpagentparser.detect(k["user_agent_string"], {}).get("os").get("name"), axis=1)
 
 
     def compute_top_5(self):
