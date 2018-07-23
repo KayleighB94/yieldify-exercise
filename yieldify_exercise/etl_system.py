@@ -11,8 +11,7 @@ class ETL_Metrics:
         """
         """
         self.path = []
-        self.file_content = []
-        self.top_5 = []
+        self.top_5 = None
         self.df = None
 
 
@@ -35,9 +34,11 @@ class ETL_Metrics:
         self.df["os_family"] = self.df.apply(lambda k:httpagentparser.detect(k["user_agent_string"], {}).get("os").get("name"), axis=1)
 
 
-    def compute_top_5(self):
+    def compute_top_5(self, groupByCols):
         """"
         """
+        top_5 = self.df #.groupBy(groupByCols).agg(["count"])
+        return top_5
 
 
     def run(self):
@@ -47,9 +48,12 @@ class ETL_Metrics:
         """
         self.read_file()
         self.setup_data()
-        self.compute_top_5()
+        ## Top 5 Countries per event
+        top_5_countries = self.compute_top_5()
 
-        print("Top 5")
+
+        print("Top 5 Countries per event")
+        print(top_5_countries)
 
 
 if __name__ == "__main__":

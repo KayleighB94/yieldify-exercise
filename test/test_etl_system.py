@@ -69,22 +69,46 @@ class TestEtlSystem(unittest.TestCase):
         :return:
         """
         input_data = [
-            {"user": "334343434", "event": "4444/343434", "country":"United Kingdom", "city":"Manchester", "browser_family": "Safari", "os_family":"iOS"},
-            {"user": "334343434", "event": "5555/353535", "country":"United Kingdom", "city":"Harlech", "browser_family": "Chrome", "os_family": "Linux"},
-            {"user": "334343434", "event": "6666/363636", "country":"United Kingdom", "city":"Liverpool", "browser_family": "Chrome", "os_family": "Linux"},
-            ]
+            {"user": "213343524", "country":"United Kingdom"},
+            {"user": "213343524", "country":"United Kingdom"},
+            {"user": "211323242", "country":"United Kingdom"},
+            {"user": "216747575", "country": "United Kingdom"},
+            {"user": "216747575", "country": "United Kingdom"},
+            {"user": "219787576", "country": "United Kingdom"},
+            {"user": "334343434", "country": "USA"},
+            {"user": "343343434", "country": "USA"},
+            {"user": "345454677", "country": "USA"},
+            {"user": "325546566", "country": "USA"},
+            {"user": "325757785", "country": "USA"},
+            {"user": "459797867", "country": "Brazil"},
+            {"user": "412143566", "country": "Brazil"},
+            {"user": "423546664", "country": "Brazil"},
+            {"user": "456362546", "country": "Brazil"},
+            {"user": "524224823", "country": "France"},
+            {"user": "543242732", "country": "France"},
+            {"user": "543236736", "country": "France"},
+            {"user": "623235378", "country": "Spain"},
+            {"user": "634231545", "country": "Spain"},
+            {"user": "734242463", "country": "Italy"},
+
+        ]
         self.etl.df = pandas.DataFrame(input_data)
 
         ## Running the method
-        self.etl.setup_data()
+        self.etl.compute_top_5(["country"])
 
         ## Creating expected data
         expected_data = [
-
+            {"country":"United Kingdom", "count":6},
+            {"country": "USA", "count":5},
+            {"country": "Brazil", "count":4},
+            {"country": "France", "count":3},
+            {"country": "Spain", "count":2},
+            {"country": "Italy", "count":1}
         ]
-        expected_df = pandas.DataFrame(expected_data)[
-            ["IP", "user_agent_string", "country", "city", "browser_family", "os_family"]]
+        expected_df = pandas.DataFrame(expected_data)
 
+        assert expected_df.equals(self.etl.top_5)
 
     # def test_run(self):
     #     """
