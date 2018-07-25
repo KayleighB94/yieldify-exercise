@@ -27,6 +27,22 @@ class ETL_Metrics:
         columns = ["date", "time", "user", "url", "IP", "user_agent_string"]
         self.df = pandas.read_table(self.path, compression="gzip", names=columns)
 
+    def check_ip(self, ip, type):
+        reader = geolite2.reader()
+        single_ip = ip.split(',')[0]
+        #print(single_ip)
+        print(reader.get('86.63.32.100'))
+        try:
+            if single_ip != "-":
+                match = reader.get(single_ip)['registered_country']['names']['en']
+            else:
+                return None
+        except KeyError:
+            return reader.get(single_ip)['registered_country']['names']['en']
+        except TypeError:
+            return None
+
+
     def setup_data(self):
         """
         This method uses the classes pandas dataframe and saves back to it.
@@ -39,8 +55,8 @@ class ETL_Metrics:
         this is done for each row and is saved as new columns onto our pandas dataframe.
         """
         reader = geolite2.reader()
-        self.df["country"] = self.df.apply(lambda k: reader.get(k["IP"])['country']['names']['en'], axis=1)
-        self.df["city"] = self.df.apply(lambda k: reader.get(k["IP"])['city']['names']['en'], axis=1)
+        self.df["country"] = self.df.apply(lambda k: self.check_ip(k["IP"], 'country'), axis=1)
+        self.df["city"] = self.df.apply(lambda k: reader.get(k["IP"].split(",")[0])['city']['names']['en'], axis=1)
         geolite2.close()
         self.df["browser_family"] = self.df.apply(
             lambda k: httpagentparser.detect(k["user_agent_string"], {}).get("browser").get("name"), axis=1)
@@ -81,9 +97,9 @@ class ETL_Metrics:
 
         """
         ## Creating a help string, if the user inputs the wrong parameters or no parameters
-        help_str = "etl_system.py --h <help> --path <path_to_input_data>"
+        help_str = "etl_system.py -h <help> -p <path_to_input_data>"
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "hpath")
+            opts, args = getopt.getopt(sys.argv[1:], "hp:")
         except getopt.GetoptError as err:
             print(err)
             print(help_str)
@@ -99,6 +115,7 @@ class ETL_Metrics:
                 print("Unhandled Options")
                 print(help_str)
 
+        print("These are the following parameters used: ", self.path)
         # Calling two of the method that read in the data and convert the columns from ip and user string to
         # countries, cities, browsers and os'
         self.read_file()
@@ -124,5 +141,4 @@ class ETL_Metrics:
 
 if __name__ == "__main__":
     print("ETL pipeline for Top 5 metrics")
-    print("These are the following parameters used: ")
     ETL_Metrics().main()

@@ -53,7 +53,7 @@ class TestEtlSystem(unittest.TestCase):
         """
         ## Creating the input data for that method
         input_data = [
-            {"IP": '92.238.71.10',
+            {"IP": '92.238.71.10, 2.26.44.196',
              "user_agent_string": "Mozilla/5.0 (iPad; CPU OS 7_1_2 like Mac OS X) AppleWebKit/537.51.2 (KHTML, like Gecko) Version/7.0 Mobile/11D257 Safari/9537.53"},
             {"IP": '2.26.44.196',
              "user_agent_string": "Mozilla/5.0 (Linux; Android 4.4.2; GT-I9505 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.102 Mobile Safari/537.36"},
@@ -67,7 +67,7 @@ class TestEtlSystem(unittest.TestCase):
 
         ## Creating expected data
         expected_data = [
-            {"IP": "92.238.71.10",
+            {"IP": "92.238.71.10, 2.26.44.196",
              "user_agent_string": "Mozilla/5.0 (iPad; CPU OS 7_1_2 like Mac OS X) AppleWebKit/537.51.2 (KHTML, like Gecko) Version/7.0 Mobile/11D257 Safari/9537.53",
              "country": "United Kingdom", "city": "Jarrow", "browser_family": "Safari", "os_family": "iOS"},
             {"IP": "2.26.44.196",
