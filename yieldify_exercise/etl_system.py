@@ -1,8 +1,10 @@
-import sys
 import getopt
-import pandas
+import sys
+
 import httpagentparser
+import pandas
 from geolite2 import geolite2
+
 
 class ETL_Metrics:
     """This class Runs a ETL service, which takes in the data and produces top 5 metrics """
@@ -15,7 +17,6 @@ class ETL_Metrics:
         self.top_5 = None
         self.df = None
 
-
     def read_file(self):
         """
         The method creates a list of strings, which will be used for columns names:
@@ -23,9 +24,8 @@ class ETL_Metrics:
 
         This is then used along with the path to read in a gzip file to a pandas table.
         """
-        columns = ["date", "time", "user_id", "url", "IP", "user_agent_string"]
+        columns = ["date", "time", "user", "url", "IP", "user_agent_string"]
         self.df = pandas.read_table(self.path, compression="gzip", names=columns)
-
 
     def setup_data(self):
         """
@@ -39,13 +39,13 @@ class ETL_Metrics:
         this is done for each row and is saved as new columns onto our pandas dataframe.
         """
         reader = geolite2.reader()
-        self.df["country"] = self.df.apply(lambda k:reader.get(k["IP"])['country']['names']['en'], axis=1)
-        self.df["city"] = self.df.apply(lambda k:reader.get(k["IP"])['city']['names']['en'], axis=1)
+        self.df["country"] = self.df.apply(lambda k: reader.get(k["IP"])['country']['names']['en'], axis=1)
+        self.df["city"] = self.df.apply(lambda k: reader.get(k["IP"])['city']['names']['en'], axis=1)
         geolite2.close()
-        self.df["browser_family"] = self.df.apply(lambda k:httpagentparser.detect(k["user_agent_string"], {}).get("browser").get("name"), axis=1)
-        self.df["os_family"] = self.df.apply(lambda k:httpagentparser.detect(k["user_agent_string"], {}).get("os").get("name"), axis=1)
-
-
+        self.df["browser_family"] = self.df.apply(
+            lambda k: httpagentparser.detect(k["user_agent_string"], {}).get("browser").get("name"), axis=1)
+        self.df["os_family"] = self.df.apply(
+            lambda k: httpagentparser.detect(k["user_agent_string"], {}).get("os").get("name"), axis=1)
 
     def compute_top(self, groupByCols, unique=None):
         """
@@ -64,11 +64,10 @@ class ETL_Metrics:
         :return: Pandas DataFrame
         """
         if unique is None:
-            grouped_df = self.df.groupby(groupByCols).size().reset_index(name='count')
+            grouped_df = self.df.groupby(groupByCols, as_index=False).size().reset_index(name='count')
         else:
-            grouped_df = self.df.groupby(groupByCols)[unique].nunique()
+            grouped_df = self.df.groupby(groupByCols, as_index=False).agg({unique: pandas.Series.nunique})
         return grouped_df
-
 
     def main(self):
         """
@@ -84,7 +83,7 @@ class ETL_Metrics:
         ## Creating a help string, if the user inputs the wrong parameters or no parameters
         help_str = "etl_system.py --h <help> --path <path_to_input_data>"
         try:
-            opts, args =  getopt.getopt(sys.argv[1:], "hpath")
+            opts, args = getopt.getopt(sys.argv[1:], "hpath")
         except getopt.GetoptError as err:
             print(err)
             print(help_str)
