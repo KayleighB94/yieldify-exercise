@@ -1,8 +1,25 @@
 # yieldify-exercise
 This project contains my solution to Yieldify Home exercise written in Python 3.6.
-Within it, there is a class called ETL_Metrics which
+Within it, there is a class called ETL_Metrics which takes in a gzip file of data and processes the IP and user agent
+string variables into countries, cities, browser family and OS. 
+
+From there it then computes the top 5 statistics for:
+* Top 5 countries per event
+* Top 5 cities per event
+* Top 5 browsers per unique user
+* Top 5 OS per unique user
 
 # Setting Up the Environment
+This package has been created with Python 3.6 so needs to be run on a pYhton 3.6 enviroment along with the extra
+modules within the requirements.txt
+You can build a clean python enviorment by follwing the [venv package](https://docs.python.org/3/tutorial/venv.html) or
+if you are using intellji/pycharm you can create one when setting up you python interpreter.
+
+After you've created your enviorment, you can run the following command in order to install the rest of the modules
+needed to run this package.
+```shell
+pip install -r requirements.txt 
+```
 
 # Running the package
 
