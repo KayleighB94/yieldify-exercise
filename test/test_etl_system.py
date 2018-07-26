@@ -1,3 +1,4 @@
+import os
 import unittest
 
 import pandas
@@ -16,7 +17,7 @@ class TestEtlSystem(unittest.TestCase):
         within it for our tests below.
         """
         self.etl = ETL_Metrics()
-        self.etl.path = r"C:\Users\Kayleigh Bellis\Desktop\yieldify-exercise\test\resources\test_input_data.gz"
+        self.etl.path = os.getcwd() + "/test/resources/test_input_data.gz"
 
     def test_read_file(self):
         """
@@ -58,14 +59,15 @@ class TestEtlSystem(unittest.TestCase):
             {"IP": '2.26.44.196',
              "user_agent_string": "Mozilla/5.0 (Linux; Android 4.4.2; GT-I9505 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.102 Mobile Safari/537.36"},
             {"IP": '194.81.33.57',
-             "user_agent_string": "Mozilla/5.0 (Linux; Android 4.4.4; Nexus 7 Build/KTU84P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.102 Safari/537.36"}
+             "user_agent_string": "Mozilla/5.0 (Linux; Android 4.4.4; Nexus 7 Build/KTU84P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.102 Safari/537.36"},
+            {"IP": '-', "user_agent_string": '-'}
         ]
         self.etl.df = pandas.DataFrame(input_data)
 
-        ## Running the method
+        # Running the method
         self.etl.setup_data()
 
-        ## Creating expected data
+        # Creating expected data
         expected_data = [
             {"IP": "92.238.71.10, 2.26.44.196",
              "user_agent_string": "Mozilla/5.0 (iPad; CPU OS 7_1_2 like Mac OS X) AppleWebKit/537.51.2 (KHTML, like Gecko) Version/7.0 Mobile/11D257 Safari/9537.53",
@@ -75,12 +77,13 @@ class TestEtlSystem(unittest.TestCase):
              "country": "United Kingdom", "city": "Manchester", "browser_family": "Chrome", "os_family": "Linux"},
             {"IP": "194.81.33.57",
              "user_agent_string": "Mozilla/5.0 (Linux; Android 4.4.4; Nexus 7 Build/KTU84P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.102 Safari/537.36",
-             "country": "United Kingdom", "city": "Liverpool", "browser_family": "Chrome", "os_family": "Linux"}
+             "country": "United Kingdom", "city": "Liverpool", "browser_family": "Chrome", "os_family": "Linux"},
+            {"IP": '-', "user_agent_string": '-', "country": None, "city": None, "browser_family": None,
+             "os_family": None}
         ]
         expected_df = pandas.DataFrame(expected_data).reset_index()[
             ["IP", "user_agent_string", "country", "city", "browser_family", "os_family"]]
-
-        ## Asserting that the two dataset are equal to each other
+        # Asserting that the two dataset are equal to each other
         assert expected_df.equals(
             self.etl.df.reset_index()[["IP", "user_agent_string", "country", "city", "browser_family", "os_family"]])
 
@@ -115,10 +118,10 @@ class TestEtlSystem(unittest.TestCase):
         ]
         self.etl.df = pandas.DataFrame(input_data)
 
-        ## Running the method
+        # Running the method
         top_5_countries = self.etl.compute_top("country")
 
-        ## Creating expected data
+        # Creating expected data
         expected_data = [
             {"country": "United Kingdom", "count": 6},
             {"country": "USA", "count": 5},
@@ -128,7 +131,7 @@ class TestEtlSystem(unittest.TestCase):
             {"country": "Italy", "count": 1}
         ]
         expected_df = pandas.DataFrame(expected_data).sort_values("count").reset_index()[["country", "count"]]
-        ## Asserting that the two dataset are equal to each other
+        # Asserting that the two dataset are equal to each other
         assert expected_df.equals(top_5_countries.sort_values("count").reset_index()[["country", "count"]])
 
     def test_compute_top_unique(self):
@@ -162,10 +165,10 @@ class TestEtlSystem(unittest.TestCase):
         ]
         self.etl.df = pandas.DataFrame(input_data)
 
-        ## Running the method
+        # Running the method
         top_5_countries = self.etl.compute_top("country", "user")
 
-        ## Creating expected data
+        # Creating expected data
         expected_data = [
             {"country": "United Kingdom", "user": 4},
             {"country": "USA", "user": 5},
@@ -176,5 +179,6 @@ class TestEtlSystem(unittest.TestCase):
         ]
         expected_df = pandas.DataFrame(expected_data).sort_values(["user", "country"]).reset_index()[
             ["country", "user"]]
-        ## Asserting that the two dataset are equal to each other
+
+        # Asserting that the two dataset are equal to each other
         assert expected_df.equals(top_5_countries.sort_values(["user", "country"]).reset_index()[["country", "user"]])
