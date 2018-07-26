@@ -29,13 +29,13 @@ The etl_system takes in the following runtime parameters:
 
 In order to run the ETL, open up a terminal in this project directory and run a command like the below example:
 ```shell
-python etl_system.py --path /home/input_data/data1.gzip
+python yieldify_exercise\etl_system.py --path /home/input_data/data1.gzip
 ```
 
 # Running the tests
 The test created for the methods within the ETL_Metrics class were written using pythons unittest library.
-In order to run the tests for the methods within the class created, you need to navigate to the test folder of this
-project then run the command below in the appropriate environment
+In order to run the tests for the methods within the class created, you need to navigate to the project
+directory then run the command below in the appropriate environment.
 ```shell
 python -m unittest
 ```
