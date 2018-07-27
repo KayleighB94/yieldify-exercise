@@ -1,7 +1,9 @@
 import os
 import unittest
 
+import httpagentparser
 import pandas
+from geolite2 import geolite2
 
 from yieldify_exercise.etl_system import ETL_Metrics
 
@@ -46,6 +48,49 @@ class TestEtlSystem(unittest.TestCase):
         self.etl.read_file()
         # Asserting that the two dataframe are equal
         assert (expected_df.equals(self.etl.df[["date", "time", "user", "url", "IP", "user_agent_string"]]))
+
+    def test_none_check(self):
+        """
+        This test check whether the none_check returns what it is suppose to depending on the input parameters.
+        """
+        reader = geolite2.reader()
+        # Asserting that the correct country comes out
+        ip_right = reader.get("92.238.71.10")
+        assert (self.etl.none_check(ip_right, "IP", "country") == "United Kingdom")
+        # Asserting that when there is no key with that name or similar the method returns none
+        assert (self.etl.none_check(ip_right, "IP", "browser") == None)
+        geolite2.close()
+        # Asserting the none_check gets the name correctly
+        user_agent_right = httpagentparser.detect(
+            "Mozilla/5.0 (iPad; CPU OS 7_1_2 like Mac OS X) AppleWebKit/537.51.2 (KHTML, like Gecko) Version/7.0 Mobile/11D257 Safari/9537.53",
+            {}).get("browser")
+        assert (self.etl.none_check(user_agent_right, "user_agent_str", "browser") == "Safari")
+
+        # Asserting that when a none value is passed for both method types, then none is returned back
+        value_none = None
+        assert (self.etl.none_check(value_none, "IP", "country") == None)
+        assert (self.etl.none_check(value_none, "user_agent_str", "browser") == None)
+
+        # Asserting that a differnet method type has been chosen, it will reutrned back none
+        assert (self.etl.none_check(value_none, "mutliply", "country") == None)
+
+    def test_check_ip(self):
+        """
+        This test checks whether the check_ip method in the ETL class is producing the correct outputs for the given
+        parameters
+        """
+        # Checking to see if there is no ip that the method returns none
+        only_unknown = "unknown"
+        assert (self.etl.check_ip(only_unknown) == None)
+        # Checking to see if there is a unknown first in the string then a ip ,that the ip is returned
+        first_unknown = "unknown, 92.238.71.10"
+        assert (self.etl.check_ip(first_unknown) == "92.238.71.10")
+        # Checking to see if there is a unknown second in the string then a ip, that the ip is returned
+        second_unknown = "92.238.71.10, unknown"
+        assert (self.etl.check_ip(second_unknown) == "92.238.71.10")
+        # Checking to see if there are only ip in the string then the first ip is returned
+        no_unknown = "92.238.71.10, 2.26.44.196"
+        assert (self.etl.check_ip(no_unknown) == "92.238.71.10")
 
     def test_setup_data(self):
         """
