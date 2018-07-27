@@ -48,10 +48,11 @@ class ETL_Metrics:
             for key in value.keys():
                 if item in key:
                     return value[key]['names']['en']
+            return None
         else:
             return None
 
-    def check_ip(selfself, ip):
+    def check_ip(self, ip):
         """
         This method splits the IP string into a list of string, provided that the IPs are separated by a comma space.
         It then searches through them to see if a IP is there or not. It takes the first available IP.
