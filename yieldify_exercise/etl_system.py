@@ -3,6 +3,7 @@ import sys
 
 import httpagentparser
 import pandas
+import sqlite3
 from geolite2 import geolite2
 
 
@@ -114,6 +115,11 @@ class ETL_Metrics:
             grouped_df = self.df.groupby(group_by_cols, as_index=False).agg({unique: pandas.Series.nunique})
         return grouped_df
 
+    def write_to_db(self):
+        conn = sqlite3.connect('data.db')
+        pandas.io.sql.write_frame(self.df, name='', con=conn)
+        conn.close()
+
     def main(self):
         """
         This method is the main one which first gets the arguments passed in through the command line. Then it calls
@@ -149,6 +155,8 @@ class ETL_Metrics:
         # countries, cities, browsers and os'
         self.read_file()
         self.setup_data()
+        # This method saves the data to a database to be query
+        self.write_to_db()
 
         # Top 5 per event
         top_5_countries = self.compute_top(["country"])
