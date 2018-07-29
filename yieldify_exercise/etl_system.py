@@ -5,6 +5,7 @@ import httpagentparser
 import pandas
 import sqlite3
 from geolite2 import geolite2
+from api import app
 
 
 class ETL_Metrics:
@@ -17,6 +18,7 @@ class ETL_Metrics:
         self.path = []
         self.top_5 = None
         self.df = None
+        self.option = "api"
 
     def read_file(self):
         """
@@ -86,10 +88,10 @@ class ETL_Metrics:
             self.none_check(reader.get(self.check_ip(k["IP"])), "IP", "city") if k["IP"] not in ["-", None] else None),
                                         axis=1)
         geolite2.close()
-        self.df["browser_family"] = self.df.apply(
+        self.df["browser"] = self.df.apply(
             lambda k: self.none_check(httpagentparser.detect(k["user_agent_string"], {}).get("browser"),
                                       "user_agent_str", "browser") if k["IP"] not in ["-", None] else None, axis=1)
-        self.df["os_family"] = self.df.apply(
+        self.df["os"] = self.df.apply(
             lambda k: self.none_check(httpagentparser.detect(k["user_agent_string"], {}).get("os"), "user_agent_str",
                                       "os") if k["IP"] not in ["-", None] else None, axis=1)
 
@@ -117,7 +119,7 @@ class ETL_Metrics:
 
     def write_to_db(self):
         conn = sqlite3.connect('data.db')
-        pandas.io.sql.write_frame(self.df, name='', con=conn)
+        self.df.to_sql(name='web_data', con=conn)
         conn.close()
 
     def main(self):
@@ -132,25 +134,32 @@ class ETL_Metrics:
 
         """
         # Creating a help string, if the user inputs the wrong parameters or no parameters
-        help_str = "etl_system.py -h <help> -p <path_to_input_data>"
+        help_str = "etl_system.py -h <help> -p <path_to_input_data> -o <option>"
         try:
+            print(sys.argv[1:])
             opts, args = getopt.getopt(sys.argv[1:], "hp:")
         except getopt.GetoptError as err:
             print(err)
             print(help_str)
             sys.exit(2)
-
+        print(opts)
+        print(args)
         for opt, arg in opts:
             if opt in ("-h", "--help"):
                 print(help_str)
                 sys.exit()
             elif opt in ("-p", "--path"):
+                print(arg)
                 self.path = arg
+            elif opt in ("-o", "--option"):
+                self.option = arg
             else:
                 print("Unhandled Options")
                 print(help_str)
 
-        print("These are the following parameters used: ", self.path)
+        print("These are the following parameters used: ")
+        print("Path  = ", self.path)
+        print("Option = ", self.option)
         # Calling two of the method that read in the data and convert the columns from IP and user string to
         # countries, cities, browsers and os'
         self.read_file()
@@ -158,24 +167,26 @@ class ETL_Metrics:
         # This method saves the data to a database to be query
         self.write_to_db()
 
-        # Top 5 per event
-        top_5_countries = self.compute_top(["country"])
-        top_5_cities = self.compute_top(["city"])
+        if self.option == "api":
+            app.run()
+        else:
+            # Top 5 per event
+            top_5_countries = self.compute_top(["country"])
+            top_5_cities = self.compute_top(["city"])
 
-        # Top 5 per unique user
-        top_5_browser_per = self.compute_top(["browser_family"], "user")
-        top_5_os_per = self.compute_top(["os_family"], "user")
+            # Top 5 per unique user
+            top_5_browser_per = self.compute_top(["browser"], "user")
+            top_5_os_per = self.compute_top(["os"], "user")
 
-        print("Top 5 Countries per event:")
-        print(top_5_countries.sort_values("count", ascending=False).head())
-        print("Top 5 Cities per event:")
-        print(top_5_cities.sort_values("count", ascending=False).head())
-        print("Top 5 Browsers per unique user:")
-        print(top_5_browser_per.sort_values("user", ascending=False).head())
-        print("Top 5 OS per unique user:")
-        print(top_5_os_per.sort_values("user", ascending=False).head())
-
+            print("Top 5 Countries per event:")
+            print(top_5_countries.sort_values("count", ascending=False).head())
+            print("Top 5 Cities per event:")
+            print(top_5_cities.sort_values("count", ascending=False).head())
+            print("Top 5 Browsers per unique user:")
+            print(top_5_browser_per.sort_values("user", ascending=False).head())
+            print("Top 5 OS per unique user:")
+            print(top_5_os_per.sort_values("user", ascending=False).head())
 
 if __name__ == "__main__":
-    print("ETL pipeline for Top 5 metrics")
+    print("ETL pipeline")
     ETL_Metrics().main()
