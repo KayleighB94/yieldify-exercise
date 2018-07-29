@@ -20,6 +20,7 @@ class TestEtlSystem(unittest.TestCase):
         """
         self.etl = ETL_Metrics()
         self.etl.path = os.getcwd() + "/test/resources/test_input_data.gz"
+        self.option = "stdout"
 
     def test_read_file(self):
         """
