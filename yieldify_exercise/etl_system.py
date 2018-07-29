@@ -5,7 +5,6 @@ import httpagentparser
 import pandas
 import sqlite3
 from geolite2 import geolite2
-from api import app
 
 
 class ETL_Metrics:
@@ -119,7 +118,7 @@ class ETL_Metrics:
 
     def write_to_db(self):
         conn = sqlite3.connect('data.db')
-        self.df.to_sql(name='web_data', con=conn)
+        self.df.to_sql(name='web_data', con=conn, if_exists='replace')
         conn.close()
 
     def main(self):
@@ -168,7 +167,8 @@ class ETL_Metrics:
         self.write_to_db()
 
         if self.option == "api":
-            app.run()
+            import api
+            api.app.run()
         else:
             # Top 5 per event
             top_5_countries = self.compute_top(["country"])
