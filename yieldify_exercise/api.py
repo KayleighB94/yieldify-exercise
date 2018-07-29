@@ -1,21 +1,26 @@
-import flask
+import sqlite3
+from flask import Flask, render_template
+import pandas as pd
 
-app = flask.Flask(__name__)
+app = Flask(__name__)
 app.config["DEBUG"] = True
 
 
 @app.route('/', methods=['GET'])
 def home():
-    return "<h1>Yieldify Exercise</h1><p>This API is to shwo the metrics calculated from the data.</p>"
+    return "<h1>Yieldify Exercise</h1><p>This API is to show the metrics calculated from the data.</p>"
 
-@app.route('/api/v1/metrics', methods=['POST'])
-def get_timestamp():
-    return None
-
-# A route to return all of the available entries in our catalog.
-@app.route('/api/v1/metrics', methods=['GET'])
-def metrics():
-    return None
+@app.route('/stats/browser', methods=['GET'])
+def all_metrics():
+    type="browser_family"
+    # Getting the data
+    conn = sqlite3.connect('data.db')
+    sql_query = 'select '+type+', count(*) as count from web_data group by '+type
+    df = pd.read_sql(sql_query, con=conn)
+    total = df["count"].sum()
+    df["percentage"] = df["count"].apply(lambda v: (v/total)*100)
+    df= df.sort_values("percentage", ascending=False).reset_index()[[type, "count", "percentage"]]
+    return render_template("percentage.html", type=type, data=df.to_html(), total=total)
 
 
 @app.errorhandler(404)
