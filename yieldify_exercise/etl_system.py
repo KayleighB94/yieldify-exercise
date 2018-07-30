@@ -1,14 +1,17 @@
 import getopt
 import sys
+import time
 
 import httpagentparser
 import pandas
 import sqlite3
 from geolite2 import geolite2
+from user_agents import parse
 
 
 class ETL_Metrics:
-    """This class Runs a ETL service, which takes in the data and produces top 5 metrics """
+    """This class Runs a ETL service, which takes in the data, parses it, writes it to a table within a database then
+     either produces top 5 metrics or calls the API """
 
     def __init__(self):
         """
@@ -17,7 +20,7 @@ class ETL_Metrics:
         self.path = []
         self.top_5 = None
         self.df = None
-        self.option = "api"
+        self.option = None
 
     def read_file(self):
         """
@@ -27,7 +30,7 @@ class ETL_Metrics:
         This is then used along with the path to read in a gzip file to a pandas table.
         """
         columns = ["date", "time", "user", "url", "IP", "user_agent_string"]
-        self.df = pandas.read_table(self.path, compression="gzip", names=columns)
+        self.df = pandas.read_table(self.path, compression="gzip", names=columns, parse_dates=[["date", "time"]])
 
     def none_check(self, value, method_type, item):
         """
@@ -45,7 +48,7 @@ class ETL_Metrics:
         :return:
         """
         if (method_type == "user_agent_str") & (value is not None):
-            return value.get("name")
+            return value.family
         elif (method_type == "IP") & (value is not None):
             for key in value.keys():
                 if item in key:
@@ -71,13 +74,15 @@ class ETL_Metrics:
         """
         This method uses the classes pandas dataframe and saves back to it.
 
-        It first initializes the connection with geolite2, then for each IP in the data, it finds out the country and
+        It first converts the date and time column into a timestamp and saves this as a new column to the data. It then
+        initializes the connection with geolite2, and for each IP in the data, it finds out the country and
         city of that IP and stores this as a new column onto our pandas dataframe. After it has does this we close the
         connection to geolite2.
 
         After that will call httpagentparser which converts our user_agent_string into its browser family and it's OS,
         this is done for each row and is saved as new columns onto our pandas dataframe.
         """
+        self.df["timestamp"] = self.df["date_time"].apply(lambda k: time.mktime(k.timetuple()))
         reader = geolite2.reader()
         self.df["country"] = self.df.apply(lambda k: (
             self.none_check(reader.get(self.check_ip(k["IP"])), "IP", "country") if k["IP"] not in ["-",
@@ -87,12 +92,25 @@ class ETL_Metrics:
             self.none_check(reader.get(self.check_ip(k["IP"])), "IP", "city") if k["IP"] not in ["-", None] else None),
                                         axis=1)
         geolite2.close()
+        # self.df["browser"] = self.df.apply(
+        #     lambda k: self.none_check(httpagentparser.detect(k["user_agent_string"], {}).get("browser"),
+        #                               "user_agent_str", "browser") if k["user_agent_string"] not in ["-", None] else None, axis=1)
+        # self.df["os"] = self.df.apply(
+        #     lambda k: self.none_check(httpagentparser.detect(k["user_agent_string"], {}).get("os"), "user_agent_str",
+        #                               "os") if k["user_agent_string"] not in ["-", None] else None, axis=1)
+        # self.df["platform"] = self.df.apply(
+        #     lambda k: self.none_check(httpagentparser.detect(k["user_agent_string"], {}).get("device"), "user_agent_str",
+        #                               "platform") if k["user_agent_string"] not in ["-", None] else None, axis=1)
+
         self.df["browser"] = self.df.apply(
-            lambda k: self.none_check(httpagentparser.detect(k["user_agent_string"], {}).get("browser"),
-                                      "user_agent_str", "browser") if k["IP"] not in ["-", None] else None, axis=1)
+            lambda k: self.none_check(parse(k["user_agent_string"]).browser,
+                                      "user_agent_str", "browser") if k["user_agent_string"] not in ["-", None] else None, axis=1)
         self.df["os"] = self.df.apply(
-            lambda k: self.none_check(httpagentparser.detect(k["user_agent_string"], {}).get("os"), "user_agent_str",
-                                      "os") if k["IP"] not in ["-", None] else None, axis=1)
+            lambda k: self.none_check(parse(k["user_agent_string"]).os, "user_agent_str",
+                                      "os") if k["user_agent_string"] not in ["-", None] else None, axis=1)
+        self.df["device"] = self.df.apply(
+            lambda k: self.none_check(parse(k["user_agent_string"]).device, "user_agent_str",
+                                      "device") if k["user_agent_string"] not in ["-", None] else None, axis=1)
 
     def compute_top(self, group_by_cols, unique=None):
         """
@@ -117,6 +135,11 @@ class ETL_Metrics:
         return grouped_df
 
     def write_to_db(self):
+        """
+        This method creates a connection with the data database then writes the data parsed to it. If there is already
+        data within the web_date table then it overwrites it.
+        Afterwards it closes the connection to the database.
+        """
         conn = sqlite3.connect('data.db')
         self.df.to_sql(name='web_data', con=conn, if_exists='replace')
         conn.close()
@@ -124,7 +147,7 @@ class ETL_Metrics:
     def main(self):
         """
         This method is the main one which first gets the arguments passed in through the command line. Then it calls
-        the other methods in order and prints out the statistics of the top 5 of the following:
+        the other methods in order and either calls the API or prints out the statistics of the top 5 of the following:
         Countries per event (row)
         Cities per event (row)
         Browser family based on unique users
@@ -135,26 +158,22 @@ class ETL_Metrics:
         # Creating a help string, if the user inputs the wrong parameters or no parameters
         help_str = "etl_system.py -h <help> -p <path_to_input_data> -o <option>"
         try:
-            print(sys.argv[1:])
-            opts, args = getopt.getopt(sys.argv[1:], "hp:")
+            opts, args = getopt.getopt(sys.argv[1:], "hp:o:", ["path=", "option="])
         except getopt.GetoptError as err:
-            print(err)
-            print(help_str)
             sys.exit(2)
-        print(opts)
-        print(args)
         for opt, arg in opts:
             if opt in ("-h", "--help"):
-                print(help_str)
                 sys.exit()
             elif opt in ("-p", "--path"):
-                print(arg)
                 self.path = arg
-            elif opt in ("-o", "--option"):
+            elif opt in ("-o", "--option") and arg in ("stdout", "api"):
                 self.option = arg
+            elif opt in ("-o", "--option") and arg not in ("stdout", "api"):
+                print("Unhandled option string")
+                print("It can either be stdout or api")
+                sys.exit()
             else:
-                print("Unhandled Options")
-                print(help_str)
+                print("Unhandled Arguments")
 
         print("These are the following parameters used: ")
         print("Path  = ", self.path)

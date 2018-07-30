@@ -1,9 +1,18 @@
 <html>
 <head>
-	<title>{{type}}</title>
+	<title>{{object_type}}</title>
 </head>
 <body>
-<h1>Percentage of detected {{type}}s </h1>
+<h1>Percentage of detected {{object_type}}</h1>
+{% if start_date is not none  and end_date is not none%}
+    <p>These percentages are between the timestamps {{start_date}} and {{end_date}}</p>
+{% elif start_date is not none%}
+    <p>These percentages are after the timestamp {{start_date}}</p>
+{% elif end_date is not none%}
+    <p>These percentages are before the timestamp {{start_date}}</p>
+{% else %}
+    <p>No date set, so showing global percentages</p>
+{%endif %}
 {{data | safe}}
 
 </body>
